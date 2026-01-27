@@ -278,7 +278,7 @@ def play_blackjack(ctx: GameContext) -> None:
         insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hand, account)
 
         # player BJ check
-        if hand_total(player_hand) == 21:
+        if hand_total(player_hand[hand_index]) == 21:
             player_bj = True
             player_status = False
 
