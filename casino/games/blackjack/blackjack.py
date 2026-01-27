@@ -301,6 +301,12 @@ def play_blackjack(ctx: GameContext) -> None:
             cprint("Your hand:")
             print_hand(player_hands[hand_index])
 
+            # check if a split can be made
+            choosen_hand = player_hands[hand_index]
+            split_possible = False
+            if len(choosen_hand) == 2 and choosen_hand[0].rank == choosen_hand[1].rank:
+                split_possible = True
+
             # conditional actions
             account = ctx.account
             if initial_hand and account.balance > bet:
