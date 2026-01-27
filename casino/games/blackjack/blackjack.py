@@ -266,8 +266,9 @@ def play_blackjack(ctx: GameContext) -> None:
         deck = FULL_DECK
 
         # hands
-        player_hand = []
+        player_hands = [[]]
         dealer_hand = []
+        hand_index = 0 #the hand the player is using
 
         # initial deal (player first)
         for _ in range(2):
