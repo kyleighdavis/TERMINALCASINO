@@ -395,8 +395,9 @@ def play_blackjack(ctx: GameContext) -> None:
                     print_hand(player_hands[hand_index - 1])
 
             # player 21 end condition
-            if hand_total(player_hand) == 21:
+            if hand_total(player_hand[hand_index]) == 21:
                 player_status = False
+                hand_index += 1
 
         # dealer turn
         while dealer_status:
@@ -405,16 +406,32 @@ def play_blackjack(ctx: GameContext) -> None:
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) == 1:
+                    cprint("Your hand:")
+                    print_hand(player_hands[0])
+                else:
+                    for i in range(len(player_hands)):
+                        cprint(f"Hand {i+1}:")
+                        print_hand(player_hands[i])
+
                 dealer_status = False
+
             elif hand_total(dealer_hand) > 16:
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) == 1:
+                    cprint("Your hand:")
+                    print_hand(player_hands[0])
+                else:
+                    for i in range(len(player_hands)):
+                        cprint(f"Hand {i+1}:")
+                        print_hand(player_hands[i])
+                
                 dealer_status = False
+                
             else:
                 deal_card(dealer_hand, deck)
 
