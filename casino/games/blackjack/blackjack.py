@@ -310,11 +310,15 @@ def play_blackjack(ctx: GameContext) -> None:
             # conditional actions
             account = ctx.account
             if initial_hand and account.balance > bet:
-                actions_str = "[S]tay   [H]it   [D]ouble Down"
-                actions = "SsHhDd"
+                if split_possible:
+                    actions_str = "[S]tay   [H]it   [D]ouble Down  [SS]plit"
+                    actions = ["S", "s", "H", "h", "D", "d", "SS", "ss"]
+                else:
+                    actions_str = "[S]tay   [H]it  [D]ouble Down"
+                    actions = ["S", "s", "H", "h", "D", "d"]
             else:
-                actions_str = "[S]tay   [H]it"
-                actions = "SsHh"
+                actions_str = "[S]tay  [H]it"
+                actions = ["S", "s", "H", "h"]
 
             initial_hand = False
 
