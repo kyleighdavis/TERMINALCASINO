@@ -272,7 +272,7 @@ def play_blackjack(ctx: GameContext) -> None:
 
         # initial deal (player first)
         for _ in range(2):
-            deal_card(player_hand, deck)
+            deal_card(player_hands[hand_index], deck)
             deal_card(dealer_hand, deck)
 
         insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hand, account)
