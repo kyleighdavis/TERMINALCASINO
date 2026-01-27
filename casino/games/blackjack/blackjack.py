@@ -299,7 +299,7 @@ def play_blackjack(ctx: GameContext) -> None:
             cprint("Dealer hand:")
             print_hand(dealer_hand, hidden=True)
             cprint("Your hand:")
-            print_hand(player_hand)
+            print_hand(player_hands[hand_index])
 
             # conditional actions
             account = ctx.account
