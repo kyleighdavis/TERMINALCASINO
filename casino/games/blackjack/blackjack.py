@@ -272,13 +272,13 @@ def play_blackjack(ctx: GameContext) -> None:
 
         # initial deal (player first)
         for _ in range(2):
-            deal_card(player_hands[hand_index], deck)
+            deal_card(player_hands[0], deck)
             deal_card(dealer_hand, deck)
 
-        insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hand, account)
+        insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hands[0], account)
 
         # player BJ check
-        if hand_total(player_hand[hand_index]) == 21:
+        if hand_total(player_hands[hand_index]) == 21:
             player_bj = True
             player_status = False
 
@@ -338,7 +338,7 @@ def play_blackjack(ctx: GameContext) -> None:
                 cprint(INVALID_CHOICE_MSG + "\n")
                 print_dealer_cards(dealer_hand)
                 cprint("Your hand:")
-                print_hand(player_hand)
+                print_hand(player_hands[hand_index])
                 action = cinput(actions_str)
 
             clear_screen()
@@ -395,7 +395,7 @@ def play_blackjack(ctx: GameContext) -> None:
                     print_hand(player_hands[hand_index - 1])
 
             # player 21 end condition
-            if hand_total(player_hand[hand_index]) == 21:
+            if hand_total(player_hands[hand_index]) == 21:
                 player_status = False
                 hand_index += 1
 
