@@ -431,67 +431,98 @@ def play_blackjack(ctx: GameContext) -> None:
                         print_hand(player_hands[i])
                 
                 dealer_status = False
-                
+
             else:
                 deal_card(dealer_hand, deck)
 
         ############## WIN CHECKS ##############
         print()
-        player_won = False
-        dealer_won = False
-        win_msgs = []
+        #player_won = False
+        #dealer_won = False
+        #win_msgs = []
         # insurance resolution
         if dealer_bj:
             insurance_msg = resolve_insurance_win(account, insurance_bet, insurance_taken)
-            win_msgs.append(insurance_msg)
+            cprint(insurance_msg)
         else:
             insurance_msg = resolve_insurance_loss(insurance_bet, insurance_taken)
-            win_msgs.append(insurance_msg)
+            cprint(insurance_msg)
         # main game resolution
-        if player_bj and dealer_bj:
-            win_msgs.append("Player and dealer have a blackjack\n")
-            win_msgs.append("Push\n")
-            # player gets back bet, +1 draw
-        elif not player_bj and dealer_bj:
-            win_msgs.append("Dealer has a blackjack\n")
-            win_msgs.append(f"You lose: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif player_bj and not dealer_bj:
-            win_msgs.append("Player has a blackjack\n")
-            win_msgs.append(f"You win: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win, +1 bj counter
-        elif hand_total(player_hand) > 21:
-            win_msgs.append("You busted\n")
-            win_msgs.append(f"Dealer wins: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif hand_total(player_hand) <= 21 and hand_total(dealer_hand) > 21:
-            win_msgs.append("Dealer busted\n")
-            win_msgs.append(f"You win: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win
-        elif hand_total(player_hand) == hand_total(dealer_hand):
-            win_msgs.append("Player and dealer have same number\n")
-            win_msgs.append("Push\n")
-            # player gets back bet, +1 draw
-        elif hand_total(player_hand) < hand_total(dealer_hand):
-            win_msgs.append(f"Dealer wins: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif hand_total(player_hand) > hand_total(dealer_hand):
-            win_msgs.append(f"Player wins: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win
-        else:
-            raise ValueError(
-                "Unaccounted for win condition!\n"
-                f"Player: {hand_total(player_hand)}   "
-                f"Dealer: {hand_total(dealer_hand)}"
-            )
+        for i in range(len(player_hands)):
+            player_won = False
+            dealer_won = False
+            win_msgs = []
+
+            if player_bj and dealer_bj:
+                win_msgs.append("Player and dealer have a blackjack\n")
+                win_msgs.append("Push\n")
+                # player gets back bet, +1 draw
+            elif not player_bj and dealer_bj:
+                win_msgs.append("Dealer has a blackjack\n")
+                win_msgs.append(f"You lose: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif player_bj and not dealer_bj:
+                win_msgs.append("Player has a blackjack\n")
+                win_msgs.append(f"You win: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win, +1 bj counter
+            elif hand_total(player_hands[i]) > 21:
+                if len(player_hands) == 1:
+                    win_msgs.append("You busted\n")
+                else:
+                    win_msgs.append(f"Hand {i+1} busted\n")
+                win_msgs.append(f"Dealer wins: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif hand_total(player_hands[i]) <= 21 and hand_total(dealer_hand) > 21:
+                win_msgs.append("Dealer busted\n")
+                win_msgs.append(f"You win: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win
+            elif hand_total(player_hands[i]) == hand_total(dealer_hand):
+                win_msgs.append("Player and dealer have same number\n")
+                win_msgs.append("Push\n")
+                # player gets back bet, +1 draw
+            elif hand_total(player_hands[i]) < hand_total(dealer_hand):
+                win_msgs.append(f"Dealer wins: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif hand_total(player_hands[i]) > hand_total(dealer_hand):
+                win_msgs.append(f"Player wins: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win
+            else:
+                raise ValueError(
+                    "Unaccounted for win condition!\n"
+                    f"Player: {hand_total(player_hands[i])}   "
+                    f"Dealer: {hand_total(dealer_hand)}"
+                )
+            
+            if player_won:
+                account.deposit(bet * 2)
+            elif not dealer_won:
+                account.deposit(bet)
+            
+            if len(player_hands) > 1:
+                cprint(f"Hand {i+1}")
+                print()
+            cprint("Dealer hand:")
+            print_hand(dealer_hand)
+            if len(player_hands) == 1:
+                cprint("Your hand:")
+                print_hand(player_hands[0])
+            else:
+                cprint(f"Hand {i+1}:")
+                print_hand(player_hands[i])
+            
+            for msg in win_msgs:
+                cprint(msg)
+
+            
 
         # update account balance and redisplay
+        """
         if player_won:
             account.deposit(bet * 2)
         elif not dealer_won: # tie
@@ -504,6 +535,7 @@ def play_blackjack(ctx: GameContext) -> None:
         print_hand(player_hand)
         for msg in win_msgs:
             cprint(msg)
+        """
 
         # game restart?
         if account.balance < min_bet:
