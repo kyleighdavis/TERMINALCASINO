@@ -347,12 +347,24 @@ def play_blackjack(ctx: GameContext) -> None:
             # handle action
             if action.lower() == "s":
                 player_status = False
+                hand_index += 1
             elif action.lower() == "h":
-                deal_card(player_hand, deck)
+                deal_card(player_hands[hand_index], deck)
+                if hand_total(player_hands[hand_index], deck) > 21:
+                    player_status = False
+                    hand_index += 1
             elif action.lower() == "d":
-                bet = double_down(ctx, player_hand, deck, bet)
+                bet = double_down(ctx, player_hands[hand_index], deck, bet)
                 clear_screen()
                 display_blackjack_topbar(ctx, bet)
+                player_status = False #might not need
+                hand_index += 1
+            elif action.lower() == "ss":
+                account.withdraw(initial_bet)
+                second_card = player_hands[hand_index].pop()
+                player_hands.append([second_card])
+                deal_card(player_hands[hand_index], deck)
+                deal_card(player_hands[-1], deck)
             else:
                 raise ValueError(f"Invalid choice: {action}")
 
