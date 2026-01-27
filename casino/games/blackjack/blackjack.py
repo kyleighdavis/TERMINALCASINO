@@ -353,10 +353,12 @@ def play_blackjack(ctx: GameContext) -> None:
                 if hand_total(player_hands[hand_index], deck) > 21:
                     player_status = False
                     hand_index += 1
+                    if hand_index >= len(player_hands):
+                        dealer_status = False
             elif action.lower() == "d":
                 bet = double_down(ctx, player_hands[hand_index], deck, bet)
-                clear_screen()
-                display_blackjack_topbar(ctx, bet)
+                clear_screen() #might remove
+                display_blackjack_topbar(ctx, bet) #might remove
                 player_status = False #might not need
                 hand_index += 1
             elif action.lower() == "ss":
@@ -369,14 +371,28 @@ def play_blackjack(ctx: GameContext) -> None:
                 raise ValueError(f"Invalid choice: {action}")
 
             # player bust condition
-            if hand_total(player_hand) > 21:
+            if hand_total(player_hands[hand_index]) > 21:
+                if len(player_hands) > 1:
+                    cprint(f"Hand {hand_index + 1} busted")
+                else:
+                    cprint("You busted")
+
                 player_status = False
-                dealer_status = False
+                hand_index += 1
+
+                if hand_index >= len(player_hands):
+                    dealer_status = False
+                    
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) > 1:
+                    cprint(f"Hand {hand_index}:")
+                    print_hand(player_hands[hand_index - 1])
+                else:
+                    cprint("Your hand:")
+                    print_hand(player_hands[hand_index - 1])
 
             # player 21 end condition
             if hand_total(player_hand) == 21:
