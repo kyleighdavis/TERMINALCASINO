@@ -291,7 +291,7 @@ def play_blackjack(ctx: GameContext) -> None:
             cprint("Dealer hand:")
             print_hand(dealer_hand)
             cprint("Your hand:")
-            print_hand(player_hand)
+            print_hand(player_hands[hand_index])
 
         # player turn
         while player_status:
