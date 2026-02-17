@@ -266,18 +266,19 @@ def play_blackjack(ctx: GameContext) -> None:
         deck = FULL_DECK
 
         # hands
-        player_hand = []
+        player_hands = [[]]
         dealer_hand = []
+        hand_index = 0 #the hand the player is using
 
         # initial deal (player first)
         for _ in range(2):
-            deal_card(player_hand, deck)
+            deal_card(player_hands[0], deck)
             deal_card(dealer_hand, deck)
 
-        insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hand, account)
+        insurance_bet, insurance_taken = offer_insurance(ctx, bet, dealer_hand, player_hands[0], account)
 
         # player BJ check
-        if hand_total(player_hand) == 21:
+        if hand_total(player_hands[hand_index]) == 21:
             player_bj = True
             player_status = False
 
@@ -290,24 +291,37 @@ def play_blackjack(ctx: GameContext) -> None:
             cprint("Dealer hand:")
             print_hand(dealer_hand)
             cprint("Your hand:")
-            print_hand(player_hand)
+            print_hand(player_hands[hand_index])
 
         # player turn
         while player_status:
+            if hand_index >= len(player_hands):
+                player_status = False
+                break
             # display hands
             cprint("Dealer hand:")
             print_hand(dealer_hand, hidden=True)
             cprint("Your hand:")
-            print_hand(player_hand)
+            print_hand(player_hands[hand_index])
+
+            # check if a split can be made
+            choosen_hand = player_hands[hand_index]
+            split_possible = False
+            if len(choosen_hand) == 2 and choosen_hand[0].rank == choosen_hand[1].rank and account.balance >= initial_bet:
+                split_possible = True
 
             # conditional actions
             account = ctx.account
             if initial_hand and account.balance > bet:
-                actions_str = "[S]tay   [H]it   [D]ouble Down"
-                actions = "SsHhDd"
+                if split_possible:
+                    actions_str = "[S]tay   [H]it   [D]ouble Down  [SS]plit"
+                    actions = ["S", "s", "H", "h", "D", "d", "SS", "ss"]
+                else:
+                    actions_str = "[S]tay   [H]it  [D]ouble Down"
+                    actions = ["S", "s", "H", "h", "D", "d"]
             else:
-                actions_str = "[S]tay   [H]it"
-                actions = "SsHh"
+                actions_str = "[S]tay  [H]it"
+                actions = ["S", "s", "H", "h"]
 
             initial_hand = False
 
@@ -327,7 +341,7 @@ def play_blackjack(ctx: GameContext) -> None:
                 cprint(INVALID_CHOICE_MSG + "\n")
                 print_dealer_cards(dealer_hand)
                 cprint("Your hand:")
-                print_hand(player_hand)
+                print_hand(player_hands[hand_index])
                 action = cinput(actions_str)
 
             clear_screen()
@@ -335,29 +349,61 @@ def play_blackjack(ctx: GameContext) -> None:
 
             # handle action
             if action.lower() == "s":
-                player_status = False
+                hand_index += 1
+                if hand_index >= len(player_hands):
+                    player_status = False
+                continue
             elif action.lower() == "h":
-                deal_card(player_hand, deck)
+                deal_card(player_hands[hand_index], deck)
+                if hand_total(player_hands[hand_index]) > 21:
+                    hand_index += 1
+                    if hand_index >= len(player_hands):
+                        dealer_status = False
+                        player_status = False
+                    continue
             elif action.lower() == "d":
-                bet = double_down(ctx, player_hand, deck, bet)
-                clear_screen()
-                display_blackjack_topbar(ctx, bet)
+                bet = double_down(ctx, player_hands[hand_index], deck, bet)
+                hand_index += 1
+                if hand_index >= len(player_hands):
+                    player_status = False
+                continue 
+            elif action.lower() == "ss":
+                account.withdraw(initial_bet)
+                second_card = player_hands[hand_index].pop()
+                player_hands.append([second_card])
+                deal_card(player_hands[hand_index], deck)
+                deal_card(player_hands[-1], deck)
             else:
                 raise ValueError(f"Invalid choice: {action}")
 
             # player bust condition
-            if hand_total(player_hand) > 21:
+            if hand_total(player_hands[hand_index]) > 21:
+                if len(player_hands) > 1:
+                    cprint(f"Hand {hand_index + 1} busted")
+                else:
+                    cprint("You busted")
+
                 player_status = False
-                dealer_status = False
+                hand_index += 1
+
+                if hand_index >= len(player_hands):
+                    dealer_status = False
+                    
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) > 1:
+                    cprint(f"Hand {hand_index}:")
+                    print_hand(player_hands[hand_index - 1])
+                else:
+                    cprint("Your hand:")
+                    print_hand(player_hands[hand_index - 1])
 
             # player 21 end condition
-            if hand_total(player_hand) == 21:
+            if hand_total(player_hands[hand_index]) == 21:
                 player_status = False
+                hand_index += 1
 
         # dealer turn
         while dealer_status:
@@ -366,76 +412,123 @@ def play_blackjack(ctx: GameContext) -> None:
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) == 1:
+                    cprint("Your hand:")
+                    print_hand(player_hands[0])
+                else:
+                    for i in range(len(player_hands)):
+                        cprint(f"Hand {i+1}:")
+                        print_hand(player_hands[i])
+
                 dealer_status = False
+
             elif hand_total(dealer_hand) > 16:
                 # display hands
                 cprint("Dealer hand:")
                 print_hand(dealer_hand)
-                cprint("Your hand:")
-                print_hand(player_hand)
+
+                if len(player_hands) == 1:
+                    cprint("Your hand:")
+                    print_hand(player_hands[0])
+                else:
+                    for i in range(len(player_hands)):
+                        cprint(f"Hand {i+1}:")
+                        print_hand(player_hands[i])
+                
                 dealer_status = False
+
             else:
                 deal_card(dealer_hand, deck)
 
         ############## WIN CHECKS ##############
         print()
-        player_won = False
-        dealer_won = False
-        win_msgs = []
+        #player_won = False
+        #dealer_won = False
+        #win_msgs = []
         # insurance resolution
         if dealer_bj:
             insurance_msg = resolve_insurance_win(account, insurance_bet, insurance_taken)
-            win_msgs.append(insurance_msg)
+            cprint(insurance_msg)
         else:
             insurance_msg = resolve_insurance_loss(insurance_bet, insurance_taken)
-            win_msgs.append(insurance_msg)
+            cprint(insurance_msg)
         # main game resolution
-        if player_bj and dealer_bj:
-            win_msgs.append("Player and dealer have a blackjack\n")
-            win_msgs.append("Push\n")
-            # player gets back bet, +1 draw
-        elif not player_bj and dealer_bj:
-            win_msgs.append("Dealer has a blackjack\n")
-            win_msgs.append(f"You lose: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif player_bj and not dealer_bj:
-            win_msgs.append("Player has a blackjack\n")
-            win_msgs.append(f"You win: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win, +1 bj counter
-        elif hand_total(player_hand) > 21:
-            win_msgs.append("You busted\n")
-            win_msgs.append(f"Dealer wins: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif hand_total(player_hand) <= 21 and hand_total(dealer_hand) > 21:
-            win_msgs.append("Dealer busted\n")
-            win_msgs.append(f"You win: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win
-        elif hand_total(player_hand) == hand_total(dealer_hand):
-            win_msgs.append("Player and dealer have same number\n")
-            win_msgs.append("Push\n")
-            # player gets back bet, +1 draw
-        elif hand_total(player_hand) < hand_total(dealer_hand):
-            win_msgs.append(f"Dealer wins: -{bet} chips\n")
-            dealer_won = True
-            # player loses bet, +1 loss
-        elif hand_total(player_hand) > hand_total(dealer_hand):
-            win_msgs.append(f"Player wins: +{bet} chips\n")
-            player_won = True
-            # player gets back 2x bet, +1 win
-        else:
-            raise ValueError(
-                "Unaccounted for win condition!\n"
-                f"Player: {hand_total(player_hand)}   "
-                f"Dealer: {hand_total(dealer_hand)}"
-            )
+        for i in range(len(player_hands)):
+            player_won = False
+            dealer_won = False
+            win_msgs = []
+
+            if player_bj and dealer_bj:
+                win_msgs.append("Player and dealer have a blackjack\n")
+                win_msgs.append("Push\n")
+                # player gets back bet, +1 draw
+            elif not player_bj and dealer_bj:
+                win_msgs.append("Dealer has a blackjack\n")
+                win_msgs.append(f"You lose: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif player_bj and not dealer_bj:
+                win_msgs.append("Player has a blackjack\n")
+                win_msgs.append(f"You win: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win, +1 bj counter
+            elif hand_total(player_hands[i]) > 21:
+                if len(player_hands) == 1:
+                    win_msgs.append("You busted\n")
+                else:
+                    win_msgs.append(f"Hand {i+1} busted\n")
+                win_msgs.append(f"Dealer wins: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif hand_total(player_hands[i]) <= 21 and hand_total(dealer_hand) > 21:
+                win_msgs.append("Dealer busted\n")
+                win_msgs.append(f"You win: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win
+            elif hand_total(player_hands[i]) == hand_total(dealer_hand):
+                win_msgs.append("Player and dealer have same number\n")
+                win_msgs.append("Push\n")
+                # player gets back bet, +1 draw
+            elif hand_total(player_hands[i]) < hand_total(dealer_hand):
+                win_msgs.append(f"Dealer wins: -{bet} chips\n")
+                dealer_won = True
+                # player loses bet, +1 loss
+            elif hand_total(player_hands[i]) > hand_total(dealer_hand):
+                win_msgs.append(f"Player wins: +{bet} chips\n")
+                player_won = True
+                # player gets back 2x bet, +1 win
+            else:
+                raise ValueError(
+                    "Unaccounted for win condition!\n"
+                    f"Player: {hand_total(player_hands[i])}   "
+                    f"Dealer: {hand_total(dealer_hand)}"
+                )
+            
+            if player_won:
+                account.deposit(bet * 2)
+            elif not dealer_won:
+                account.deposit(bet)
+            
+            if len(player_hands) > 1:
+                cprint(f"\nHand {i+1}")
+                print()
+            cprint("Dealer hand:")
+            print_hand(dealer_hand)
+            if len(player_hands) == 1:
+                cprint("Your hand:")
+                print_hand(player_hands[0])
+            else:
+                cprint(f"\nYour Hand:")
+                print_hand(player_hands[i])
+            
+            for msg in win_msgs:
+                cprint(msg)
+
+            
 
         # update account balance and redisplay
+        """
         if player_won:
             account.deposit(bet * 2)
         elif not dealer_won: # tie
@@ -448,6 +541,7 @@ def play_blackjack(ctx: GameContext) -> None:
         print_hand(player_hand)
         for msg in win_msgs:
             cprint(msg)
+        """
 
         # game restart?
         if account.balance < min_bet:
