@@ -295,6 +295,9 @@ def play_blackjack(ctx: GameContext) -> None:
 
         # player turn
         while player_status:
+            if hand_index >= len(player_hands):
+                player_status = False
+                break
             # display hands
             cprint("Dealer hand:")
             print_hand(dealer_hand, hidden=True)
@@ -346,21 +349,24 @@ def play_blackjack(ctx: GameContext) -> None:
 
             # handle action
             if action.lower() == "s":
-                player_status = False
                 hand_index += 1
+                if hand_index >= len(player_hands):
+                    player_status = False
+                continue
             elif action.lower() == "h":
                 deal_card(player_hands[hand_index], deck)
-                if hand_total(player_hands[hand_index], deck) > 21:
-                    player_status = False
+                if hand_total(player_hands[hand_index]) > 21:
                     hand_index += 1
                     if hand_index >= len(player_hands):
                         dealer_status = False
+                        player_status = False
+                    continue
             elif action.lower() == "d":
                 bet = double_down(ctx, player_hands[hand_index], deck, bet)
-                clear_screen() #might remove
-                display_blackjack_topbar(ctx, bet) #might remove
-                player_status = False #might not need
                 hand_index += 1
+                if hand_index >= len(player_hands):
+                    player_status = False
+                continue 
             elif action.lower() == "ss":
                 account.withdraw(initial_bet)
                 second_card = player_hands[hand_index].pop()
@@ -505,7 +511,7 @@ def play_blackjack(ctx: GameContext) -> None:
                 account.deposit(bet)
             
             if len(player_hands) > 1:
-                cprint(f"Hand {i+1}")
+                cprint(f"\nHand {i+1}")
                 print()
             cprint("Dealer hand:")
             print_hand(dealer_hand)
@@ -513,7 +519,7 @@ def play_blackjack(ctx: GameContext) -> None:
                 cprint("Your hand:")
                 print_hand(player_hands[0])
             else:
-                cprint(f"Hand {i+1}:")
+                cprint(f"\nYour Hand:")
                 print_hand(player_hands[i])
             
             for msg in win_msgs:
